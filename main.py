@@ -456,6 +456,61 @@ def creditApproval(citizenship, state, age, sex, region, income_class, dependent
     return credit_approved, credit_limit
 
 
+def mutatedCreditApproval(citizenship, state, age, sex, region, income_class, dependents_number, marital_status):
+    credit_limit = 0
+    credit_approved = 0
+
+    if region == 5 or region == 6:
+        credit_limit = 0
+    else:
+        if age < 18:
+            credit_limit = 0
+        else:
+            if citizenship == 0:
+                credit_limit = 5000 + 1000 / income_class # changed * to /
+
+                if state == 0:
+                    if region == 3 or region == 4:
+                        credit_limit *= 2
+                    else:
+                        credit_limit *= 1.5
+                else:
+                    credit_limit *= 1.1
+
+                if marital_status == 0:
+                    if dependents_number > 0:
+                        credit_limit += 200 * dependents_number
+                    else:
+                        credit_limit += 500
+                else:
+                    credit_limit += 1000
+
+                if sex == 0:
+                    credit_limit += 500
+                else:
+                    credit_limit += 1000
+            else:
+                credit_limit = 1000 + 800 * income_class
+                if marital_status == 0:
+                    if dependents_number > 2:
+                        credit_limit += 100 * dependents_number
+                    else:
+                        credit_limit += 100
+                else:
+                    credit_limit += 300
+
+                if sex == 0:
+                    credit_limit += 100
+                else:
+                    credit_limit += 200
+    if credit_limit == 0:
+        credit_approved = 1
+    else:
+        credit_approved = 0
+
+    return credit_approved, credit_limit
+
+
 def normalize(x, min, max):
     # normalize between 0 and 1
     return (x - min) / (max - min)

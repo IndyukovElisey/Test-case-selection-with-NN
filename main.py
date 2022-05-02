@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 from datetime import datetime
+from random import random, randint
 
-print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
-print("TensorFlow version:", tf.__version__)
+# print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+# print("TensorFlow version:", tf.__version__)
 if tf.config.list_physical_devices('GPU'):
     print("TensorFlow **IS** using the GPU")
 else:
@@ -211,15 +212,15 @@ def clothesBuild():
 
     test_images = test_images / 255.0
 
-    plt.figure(figsize=(10, 10))
-    for i in range(25):
-        plt.subplot(5, 5, i + 1)
-        plt.xticks([])
-        plt.yticks([])
-        plt.grid(False)
-        plt.imshow(train_images[i], cmap=plt.cm.binary)
-        plt.xlabel(class_names[train_labels[i]])
-    plt.show()
+    # plt.figure(figsize=(10, 10))
+    # for i in range(25):
+    #     plt.subplot(5, 5, i + 1)
+    #     plt.xticks([])
+    #     plt.yticks([])
+    #     plt.grid(False)
+    #     plt.imshow(train_images[i], cmap=plt.cm.binary)
+    #     plt.xlabel(class_names[train_labels[i]])
+    # plt.show()
 
     model = tf.keras.Sequential([
         tf.keras.layers.Flatten(input_shape=(28, 28)),
@@ -400,12 +401,215 @@ def clothesPredict(i):
     plt.show()
 
 
+def creditApproval(citizenship, state, age, sex, region, income_class, dependents_number, marital_status):
+    credit_limit = 0
+    credit_approved = 0
+
+    if region == 5 or region == 6:
+        credit_limit = 0
+    else:
+        if age < 18:
+            credit_limit = 0
+        else:
+            if citizenship == 0:
+                credit_limit = 5000 + 1000 * income_class
+
+                if state == 0:
+                    if region == 3 or region == 4:
+                        credit_limit *= 2
+                    else:
+                        credit_limit *= 1.5
+                else:
+                    credit_limit *= 1.1
+
+                if marital_status == 0:
+                    if dependents_number > 0:
+                        credit_limit += 200 * dependents_number
+                    else:
+                        credit_limit += 500
+                else:
+                    credit_limit += 1000
+
+                if sex == 0:
+                    credit_limit += 500
+                else:
+                    credit_limit += 1000
+            else:
+                credit_limit = 1000 + 800 * income_class
+                if marital_status == 0:
+                    if dependents_number > 2:
+                        credit_limit += 100 * dependents_number
+                    else:
+                        credit_limit += 100
+                else:
+                    credit_limit += 300
+
+                if sex == 0:
+                    credit_limit += 100
+                else:
+                    credit_limit += 200
+    if credit_limit == 0:
+        credit_approved = 1
+    else:
+        credit_approved = 0
+
+    return credit_approved, credit_limit
+
+
+def normalize(x, min, max):
+    # normalize between 0 and 1
+    return (x - min) / (max - min)
+
+
+def buildCreditNN():
+    train_input = []
+    train_output = []
+    test_input = []
+    test_output = []
+    i = 0
+
+    while i < 5000:
+        citizenship = randint(0, 1)
+        state = randint(0, 1)
+        age = randint(1, 100)
+        sex = randint(0, 1)
+        region = randint(0, 6)
+        income_class = randint(0, 3)
+        dependents_number = randint(0, 4)
+        marital_status = randint(0, 1)
+
+        credit_approved, credit_limit = creditApproval(citizenship, state, age, sex, region, income_class,
+                                                       dependents_number, marital_status)
+        age = normalize(age, 1, 100)
+        region = normalize(region, 0, 6)
+        income_class = normalize(income_class, 0, 3)
+        dependents_number = normalize(dependents_number, 0, 4)
+        credit_limit = normalize(credit_limit, 0, 18000)
+        if credit_limit == 0:
+            credit_limit = 10
+        else:
+            credit_limit = int(credit_limit // 0.1)
+
+        if i < 1000:
+            train_input.append([citizenship, state, age, sex, region, income_class, dependents_number, marital_status])
+            train_output.append(credit_limit)
+        else:
+            test_input.append([citizenship, state, age, sex, region, income_class, dependents_number, marital_status])
+            test_output.append(credit_limit)
+
+        i += 1
+
+    # print(attributes)
+
+    model = tf.keras.Sequential([
+        tf.keras.layers.Dense(8),
+        tf.keras.layers.Dense(24, activation='relu'),
+        tf.keras.layers.Dense(24, activation='relu'),
+        tf.keras.layers.Dense(11)
+    ])
+
+    model.compile(optimizer='adam',
+                  loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                  metrics=['accuracy'])
+
+    model.fit(train_input, train_output, epochs=300)
+    model.save('saved_model/credit_model.h5')
+
+    model.summary()
+
+    test_loss, test_acc = model.evaluate(test_input, test_output, verbose=2)
+
+    print('\nTest accuracy:', test_acc)
+
+
+def predictCreditNN():
+    test_input = []
+    test_output = []
+    i = 0
+
+    while i < 100:
+        citizenship = randint(0, 1)
+        state = randint(0, 1)
+        age = randint(1, 100)
+        sex = randint(0, 1)
+        region = randint(0, 6)
+        income_class = randint(0, 3)
+        dependents_number = randint(0, 4)
+        marital_status = randint(0, 1)
+
+        credit_approved, credit_limit = creditApproval(citizenship, state, age, sex, region, income_class,
+                                                       dependents_number, marital_status)
+        age = normalize(age, 1, 100)
+        region = normalize(region, 0, 6)
+        income_class = normalize(income_class, 0, 3)
+        dependents_number = normalize(dependents_number, 0, 4)
+        credit_limit = normalize(credit_limit, 0, 18000)
+        if credit_limit == 0:
+            credit_limit = 10
+        else:
+            credit_limit = int(credit_limit // 0.1)
+
+        test_input.append([citizenship, state, age, sex, region, income_class, dependents_number, marital_status])
+        test_output.append(credit_limit)
+
+        i += 1
+    new_model = tf.keras.models.load_model('saved_model/credit_model.h5')
+    new_model.summary()
+    probability_model = tf.keras.Sequential([new_model,
+                                             tf.keras.layers.Softmax()])
+    predictions = probability_model.predict(test_input)
+    i = 0
+    while i < 100:
+        print(np.argmax(predictions[i]), test_output[i], test_input[i], predictions[i])
+        i += 1
+
+
+def inputPredictCreditNN():
+    citizenship = int(input('citizenship'))
+    state = int(input('state'))
+    age = int(input('age'))
+    sex = int(input('sex'))
+    region = int(input('region'))
+    income_class = int(input('income_class'))
+    dependents_number = int(input('dependents_number'))
+    marital_status = int(input('marital_status'))
+
+    output = creditApproval(citizenship, state, age, sex, region, income_class,
+                            dependents_number, marital_status)[1]
+    print('output: ', output)
+    output = normalize(output, 0, 18000)
+    if output == 0:
+        output = 10
+    else:
+        output = int(output // 0.1)
+    print('output: ', output)
+
+    age = normalize(age, 1, 100)
+    region = normalize(region, 0, 6)
+    income_class = normalize(income_class, 0, 3)
+    dependents_number = normalize(dependents_number, 0, 4)
+    test_input = [citizenship, state, age, sex, region, income_class,
+                  dependents_number, marital_status]
+    test_input = (np.expand_dims(test_input, 0))
+
+    new_model = tf.keras.models.load_model('saved_model/credit_model.h5')
+    # new_model.summary()
+    probability_model = tf.keras.Sequential([new_model,
+                                             tf.keras.layers.Softmax()])
+    predictions = probability_model.predict(test_input)
+    print('prediction: ', np.argmax(predictions[0]),  predictions[0])
+
+
 # xor()
 # digits()
 # quadratic()
 # clothesTest()
 # clothesBuild()
-i = 0
-while i < 10000:
-    clothesPredict(i)
-    i += 1
+# i = 500
+# while i < 10000:
+#     clothesPredict(i)
+#     i += 1
+# buildCreditNN()
+# predictCreditNN()
+inputPredictCreditNN()
+# print(np.tanh(0), np.tanh(1), np.tanh(100), np.tanh(1000), np.tanh(10000), np.tanh(100000))

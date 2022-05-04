@@ -1,0 +1,6 @@
+saved_model/credit_model.h5
+saved_model/my_model.h5
+saved_model/my_model/keras_metadata.pb
+saved_model/my_model/saved_model.pb
+saved_model/my_model/variables/variables.data-00000-of-00001
+saved_model/my_model/variables/variables.index

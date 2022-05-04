@@ -1,4 +1,5 @@
 from __future__ import print_function
+from unicodedata import name
 
 import tensorflow as tf
 from tensorflow import keras
@@ -710,18 +711,24 @@ def testCredit():
                 print('false negative')
                 pass
 
+def main():
+    # xor()
+    # digits()
+    # quadratic()
+    # clothesTest()
+    # clothesBuild()
+    # i = 500
+    # while i < 10000:
+    #     clothesPredict(i)
+    #     i += 1
+    # buildCreditNN(20)
+    # predictCreditNN()
+    # inputPredictCreditNN()
+    testCredit()
+    # print(np.tanh(0), np.tanh(1), np.tanh(100), np.tanh(1000), np.tanh(10000), np.tanh(100000))
+    
+if __name__ == '__main__':
+    # This code won't run if this file is imported.
+    main()
+    
 
-# xor()
-# digits()
-# quadratic()
-# clothesTest()
-# clothesBuild()
-# i = 500
-# while i < 10000:
-#     clothesPredict(i)
-#     i += 1
-# buildCreditNN(20)
-# predictCreditNN()
-# inputPredictCreditNN()
-testCredit()
-# print(np.tanh(0), np.tanh(1), np.tanh(100), np.tanh(1000), np.tanh(10000), np.tanh(100000))

@@ -525,9 +525,8 @@ def buildCreditNN(output_class_number):
     train_output = []
     test_input = []
     test_output = []
-    i = 0
-
-    while i < 5000:
+    
+    for i in range(5000):
         citizenship = randint(0, 1)
         state = randint(0, 1)
         age = randint(1, 100)
@@ -553,8 +552,6 @@ def buildCreditNN(output_class_number):
         else:
             test_input.append([citizenship, state, age, sex, region, income_class, dependents_number, marital_status])
             test_output.append(credit_limit)
-
-        i += 1
 
     # print(attributes)
 
@@ -582,9 +579,8 @@ def buildCreditNN(output_class_number):
 def predictCreditNN():
     test_input = []
     test_output = []
-    i = 0
 
-    while i < 100:
+    for i in range(100):
         citizenship = randint(0, 1)
         state = randint(0, 1)
         age = randint(1, 100)
@@ -607,16 +603,15 @@ def predictCreditNN():
         test_input.append([citizenship, state, age, sex, region, income_class, dependents_number, marital_status])
         test_output.append(credit_limit)
 
-        i += 1
     new_model = tf.keras.models.load_model('saved_model/credit_model.h5')
     new_model.summary()
     probability_model = tf.keras.Sequential([new_model,
                                              tf.keras.layers.Softmax()])
     predictions = probability_model.predict(test_input)
-    i = 0
-    while i < 100:
+
+    for i in range(100):
         print(np.argmax(predictions[i]), test_output[i], test_input[i], predictions[i])
-        i += 1
+
 
 
 def inputPredictCreditNN():
@@ -656,8 +651,8 @@ def inputPredictCreditNN():
 def testCredit():
     test_input = []
     test_number = 100
-    i = 0
-    while i < test_number:
+
+    for i in  range(test_number):
         citizenship = randint(0, 1)
         state = randint(0, 1)
         age = randint(1, 100)
@@ -674,15 +669,13 @@ def testCredit():
 
         test_input.append([citizenship, state, age, sex, region, income_class, dependents_number, marital_status])
 
-        i += 1
     new_model = tf.keras.models.load_model('saved_model/credit_model.h5')
     new_model.summary()
     probability_model = tf.keras.Sequential([new_model,
                                              tf.keras.layers.Softmax()])
     predictions = probability_model.predict(test_input)
 
-    i = 0
-    while i < test_number:
+    for i in range(test_number):
         citizenship = test_input[i][0]
         state = test_input[i][1]
         age = denormalize(test_input[i][2],1,100)
@@ -716,8 +709,6 @@ def testCredit():
             else:
                 print('false negative')
                 pass
-
-        i += 1
 
 
 # xor()

@@ -10,6 +10,8 @@ import numpy as np
 import time
 from datetime import datetime
 from random import random, randint
+import cProfile
+import pstats
 
 # print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 # print("TensorFlow version:", tf.__version__)
@@ -409,11 +411,13 @@ def creditApproval(citizenship, state, age, sex, region, income_class, dependent
     if region == 5 or region == 6:
         credit_limit = 0
     else:
-        if age < 18:
+        # if age < 18:
+        if age < 1:
             credit_limit = 0
         else:
             if citizenship == 0:
-                credit_limit = 5000 + 1000 * income_class
+                # credit_limit = 5000 + 1000 * income_class
+                credit_limit = 5000 + 1000 + income_class
 
                 if state == 0:
                     if region == 3 or region == 4:
@@ -436,7 +440,8 @@ def creditApproval(citizenship, state, age, sex, region, income_class, dependent
                 else:
                     credit_limit += 1000
             else:
-                credit_limit = 1000 + 800 * income_class
+                # credit_limit = 1000 + 800 * income_class
+                credit_limit = 1000 + 800 + income_class
                 if marital_status == 0:
                     if dependents_number > 2:
                         credit_limit += 100 * dependents_number
@@ -526,8 +531,11 @@ def buildCreditNN(output_class_number):
     train_output = []
     test_input = []
     test_output = []
+    epochs_number = 500
+    train_number = 1000
+    test_number = 1000
     
-    for i in range(5000):
+    for i in range(train_number + test_number):
         citizenship = randint(0, 1)
         state = randint(0, 1)
         age = randint(1, 100)
@@ -547,7 +555,7 @@ def buildCreditNN(output_class_number):
         if credit_limit != 0:
             credit_limit = int(credit_limit // 0.1) + 1
 
-        if i < 1000:
+        if i < train_number:
             train_input.append([citizenship, state, age, sex, region, income_class, dependents_number, marital_status])
             train_output.append(credit_limit)
         else:
@@ -557,9 +565,8 @@ def buildCreditNN(output_class_number):
     # print(attributes)
 
     model = tf.keras.Sequential([
-        tf.keras.layers.Dense(8),
-        tf.keras.layers.Dense(24, activation='relu'),
-        tf.keras.layers.Dense(24, activation='relu'),
+        tf.keras.layers.Dense(10, input_dim = 8, activation='relu'),
+        tf.keras.layers.Dense(10, activation='relu'),
         tf.keras.layers.Dense(output_class_number+1)
     ])
 
@@ -567,13 +574,12 @@ def buildCreditNN(output_class_number):
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                   metrics=['accuracy'])
 
-    model.fit(train_input, train_output, epochs=300)
+    model.fit(train_input, train_output, epochs=epochs_number)
     model.save('saved_model/credit_model.h5')
 
     model.summary()
 
     test_loss, test_acc = model.evaluate(test_input, test_output, verbose=2)
-
     print('\nTest accuracy:', test_acc)
 
 
@@ -612,7 +618,6 @@ def predictCreditNN():
 
     for i in range(100):
         print(np.argmax(predictions[i]), test_output[i], test_input[i], predictions[i])
-
 
 
 def inputPredictCreditNN():
@@ -711,6 +716,40 @@ def testCredit():
                 print('false negative')
                 pass
 
+
+def rankAttrCredit():
+    new_model = tf.keras.models.load_model('saved_model/credit_model.h5')
+    new_model.summary()
+    # get weights
+    weights0 = new_model.layers[0].get_weights()[0]
+    weights1 = new_model.layers[1].get_weights()[0]
+    # weights2 = new_model.layers[2].get_weights()[0]
+
+    weight_rank = []
+
+    while weights0.size > len(weight_rank):
+        min = 999
+        xmin = -1
+        ymin = -1
+        for ix, iy in np.ndindex(weights0.shape):
+                if abs(weights0[ix][iy]) < abs(min) and (weights0[ix][iy] != weight_rank).all():
+                    min = weights0[ix][iy]
+                    xmin = ix
+                    ymin = iy
+        weight_rank.append([xmin, ymin, min])
+    
+    input_rank = []
+    while len(weight_rank) > 0:
+        if [i[0] for i in weight_rank].count(weight_rank[0][0]) == 1:
+            input_rank.append(weight_rank[0][0])
+        weight_rank.pop(0)
+    attributes = ['citizenship', 'state', 'age', 'sex', 'region', 'income_class', 'dependents_number', 'marital_status']
+    for i in input_rank:
+        print(attributes[i])
+    pass
+        
+
+
 def main():
     # xor()
     # digits()
@@ -721,11 +760,19 @@ def main():
     # while i < 10000:
     #     clothesPredict(i)
     #     i += 1
-    # buildCreditNN(20)
+    
+    buildCreditNN(10)
     # predictCreditNN()
     # inputPredictCreditNN()
-    testCredit()
-    # print(np.tanh(0), np.tanh(1), np.tanh(100), np.tanh(1000), np.tanh(10000), np.tanh(100000))
+    # with cProfile.Profile() as pr:
+        # testCredit()
+    # testCredit()
+    rankAttrCredit()
+    
+    # stats = pstats.Stats(pr)
+    # stats.sort_stats(pstats.SortKey.TIME)
+    # stats.print_stats()
+    # stats.dump_stats(filename='needs_profiling.prof')
     
 if __name__ == '__main__':
     # This code won't run if this file is imported.

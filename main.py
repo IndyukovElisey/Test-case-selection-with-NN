@@ -3,7 +3,8 @@ from unicodedata import name
 
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+# from tensorflow.keras import layers
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,12 +14,329 @@ from random import random, randint
 import cProfile
 import pstats
 
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.uic import loadUi
+from PyQt5.QtWidgets import *
+
+import sys
+import io
+import ast
+
+np.set_printoptions(threshold=sys.maxsize)
+
 # print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 # print("TensorFlow version:", tf.__version__)
 if tf.config.list_physical_devices('GPU'):
     print("TensorFlow **IS** using the GPU")
 else:
     print("TensorFlow **IS NOT** using the GPU")
+
+
+def clicked():
+    print('clicked')
+
+
+class Window(QMainWindow):
+    def __init__(self):
+        super(Window, self).__init__()
+        self.setWindowTitle('Тестовый набор')
+        self.setGeometry(300,250,350,200)
+        self.initUI()
+    
+    def initUI(self):
+        # self.text_edit = QtWidgets.QTextEdit(self)
+        # self.setCentralWidget(self.text_edit)
+        # self.createMenuBar()
+        
+        self.label = QtWidgets.QLabel(self)
+        self.label.setText('label')
+        self.label.move(50,50)
+        
+        self.b1 = QtWidgets.QPushButton(self)
+        self.b1.setText('button')
+        self.b1.clicked.connect(self.clicked)
+    
+    def clicked(self):
+        self.label.setText('pressed 1111111111111111111111')
+        self.update()
+    
+    def update(self):
+        self.label.adjustSize()    
+    
+    def createMenuBar(self):
+       self.menuBar = QMenuBar(self) 
+       self.setMenuBar(self.menuBar)
+       
+       self.fileMenu = QMenu("&Файл", self)
+       self.menuBar.addMenu(self.fileMenu)
+ 
+
+class Ui_MainWindow(QMainWindow):
+    def __init__(self):
+        super(Ui_MainWindow, self).__init__()
+        loadUi("NN.ui",self)
+        self.btn_createNN.clicked.connect(self.buildCreditNN)
+        self.btn_sort.clicked.connect(self.rankAttrCredit)
+        self.btn_generate.clicked.connect(self.generateTestCases)
+        self.btn_test.clicked.connect(self.testCredit)
+        self.btn_page1.clicked.connect(lambda: self.verticalStackedWidget.setCurrentWidget(self.page_1))
+        self.btn_page2.clicked.connect(lambda: self.verticalStackedWidget.setCurrentWidget(self.page_2))
+        self.btn_page3.clicked.connect(lambda: self.verticalStackedWidget.setCurrentWidget(self.page_3))
+        self.btn_page4.clicked.connect(lambda: self.verticalStackedWidget.setCurrentWidget(self.page_4))
+        self.action1.triggered.connect(self.aboutDialog)
+        self.show()
+ 
+    def buildCreditNN(self):
+        train_input = []
+        train_output = []
+        test_input = []
+        test_output = []
+        
+        epochs_number = int(self.epochs.text())
+        train_number = int(self.train.text()) * 2
+        test_number = int(self.train.text())
+        output_class_number = int(self.range.text())
+        out = io.StringIO()
+
+        sys.stdout = out
+        
+        for i in range(train_number + test_number):
+            citizenship = randint(0, 1)
+            state = randint(0, 1)
+            age = randint(1, 100)
+            sex = randint(0, 1)
+            region = randint(0, 6)
+            income_class = randint(0, 199)
+            dependents_number = randint(0, 4)
+            marital_status = randint(0, 1)
+
+            credit_approved, credit_limit = creditApproval(citizenship, state, age, sex, region, income_class,
+                                                        dependents_number, marital_status)
+            age = normalize(age, 1, 100)
+            region = normalize(region, 0, 6)
+            income_class = normalize(income_class, 0, 199)
+            dependents_number = normalize(dependents_number, 0, 4)
+            credit_limit = normalize(credit_limit, 0, 20000)
+            if credit_limit != 0:
+                credit_limit = int(credit_limit // 0.1) + 1
+
+            if i < train_number:
+                train_input.append([citizenship, state, age, sex, region, income_class, dependents_number, marital_status])
+                train_output.append(credit_limit)
+            else:
+                test_input.append([citizenship, state, age, sex, region, income_class, dependents_number, marital_status])
+                test_output.append(credit_limit)
+
+        # print(attributes)
+
+        model = tf.keras.Sequential([
+            tf.keras.layers.Dense(10, input_dim = 8, activation='relu'),
+            tf.keras.layers.Dense(10, activation='relu'),
+            tf.keras.layers.Dense(output_class_number+1)
+        ])
+
+        model.compile(optimizer='adam',
+                    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                    metrics=['accuracy'])
+
+        model.fit(train_input, train_output, epochs=epochs_number)
+        model.save('saved_model/credit_model.h5')
+        model.summary()
+        
+        self.result_createNN.setText(out.getvalue())
+
+        test_loss, test_acc = model.evaluate(test_input, test_output, verbose=2)
+        self.result_accurasy.setText(f'Точность нейронной сети на тестовом наборе: {test_acc}')
+        
+        sys.stdout = sys.__stdout__
+ 
+    def rankAttrCredit(self):
+        # rank NN input attributes based on weight values
+        new_model = tf.keras.models.load_model('saved_model/credit_model.h5')
+        # new_model.summary()
+        
+        # get weights
+        weights0 = new_model.layers[0].get_weights()[0]
+        # weights1 = new_model.layers[1].get_weights()[0]
+        # weights2 = new_model.layers[2].get_weights()[0]
+
+        weight_rank = []
+
+        while weights0.size > len(weight_rank):
+            min = 999
+            xmin = -1
+            ymin = -1
+            for ix, iy in np.ndindex(weights0.shape):
+                    if abs(weights0[ix][iy]) < abs(min) and (weights0[ix][iy] != weight_rank).all():
+                        min = weights0[ix][iy]
+                        xmin = ix
+                        ymin = iy
+            weight_rank.append([xmin, ymin, min])
+        
+        input_rank = []
+        while len(weight_rank) > 0:
+            if [i[0] for i in weight_rank].count(weight_rank[0][0]) == 1:
+                input_rank.append(weight_rank[0][0])
+            weight_rank.pop(0)
+        attributes = ['citizenship', 'state', 'age', 'sex', 'region', 'income_class', 'dependents_number', 'marital_status']
+        for i in range(len(input_rank)):
+            # print(attributes[i])
+            input_rank[i]=attributes[input_rank[i]]
+        
+        self.result_sort.setText(f'{input_rank}')
+ 
+    def generateTestCases(self):
+        # generate test cases based on ranked list of input attributes
+        
+        rank_list = ast.literal_eval(self.result_sort.toPlainText())
+        test_cases = []
+        # [name, number of possible values, lower limit, upper limit]
+        attribute_limits = np.array([['citizenship', 2, 0, 1],
+                            ['state', 2, 0, 1],
+                            ['age', 3, 1, 100],
+                            ['sex', 2, 0, 1],
+                            ['region', 4, 0, 6],
+                            ['income_class', 3, 0, 199],
+                            ['dependents_number', 5, 0, 4],
+                            ['marital_status', 2, 0, 1]])
+        test_number = 1
+        
+        # delete 3 least important attributes
+        for i in range(len(rank_list)):
+            if i < 3:
+                x, = np.argwhere(attribute_limits == rank_list[i])
+                attribute_limits = np.delete(attribute_limits,x[0],0)
+
+        # attribute names in first row of suite
+        test_cases.append([attribute_limits[0][0], attribute_limits[1][0],
+                        attribute_limits[2][0],attribute_limits[3][0],
+                        attribute_limits[4][0]])
+        
+        # count number of test cases based on attributes' number of possible values
+        for i in range(len(attribute_limits)):
+            test_number *= int(attribute_limits[i][1])
+        
+        # generate test cases
+        
+        for i in range(test_number):
+            test_case = []
+            for j in attribute_limits:
+                attr = randint(int(j[2]), int(j[3]))
+                test_case.append(attr)
+            test_cases.append(test_case)  
+            
+        # test_number = 165 
+        # for i in range(test_number):
+        #     test_case = []
+        #     for j in range(len(attribute_limits)):
+        #         repeat = 1
+        #         rotate = 1
+        #         for k in range(j):
+        #             repeat *= int(attribute_limits[k][1])
+        #         for k in range(j+1):
+        #             rotate *= int(attribute_limits[k][1])
+        #         attr = round(((int(attribute_limits[j][3]) - int(attribute_limits[j][2])) / int(attribute_limits[j][1])) * (((i % rotate))//repeat) + 0.0000005) + int(attribute_limits[j][2])
+        #         if i == (144 / 2) + 1:
+        #             pass
+        #         test_case.append(attr)
+        #     test_cases.append(test_case)  
+        
+        attribute_limits = np.array([['citizenship', 2, 0, 1],
+                            ['state', 2, 0, 1],
+                            ['age', 3, 1, 100],
+                            ['sex', 2, 0, 1],
+                            ['region', 4, 0, 6],
+                            ['income_class', 3, 0, 199],
+                            ['dependents_number', 5, 0, 4],
+                            ['marital_status', 2, 0, 1]])
+        
+        # insert back deleted attributes with value '1'        
+        z = np.zeros((len(test_cases), 3), dtype=int)
+        z = z.astype(np.dtype('U20'))
+        expanded_test_cases = np.append(test_cases, z, axis=1)
+
+        for i in range(5):
+            x, = np.argwhere(attribute_limits == test_cases[0][i])
+            attribute_limits = np.delete(attribute_limits,x[0],0)
+
+        expanded_test_cases[0][5] = str(attribute_limits[0][0])
+        expanded_test_cases[0][6] = str(attribute_limits[1][0])
+        expanded_test_cases[0][7] = str(attribute_limits[2][0])
+        
+        np.savetxt('test suite.txt', expanded_test_cases, fmt='%s')
+        self.result_generate.setText(str(expanded_test_cases))
+ 
+    def testCredit(self):
+        # compares mutated and original version with given test cases
+        test_cases = np.loadtxt('test suite.txt', dtype=np.dtype('U20'))
+        
+        error_found = 0
+        test_number = 0
+        cases_found_error = ''
+        
+        attribute_limits = np.array([['citizenship', 2, 0, 1],
+                            ['state', 2, 0, 1],
+                            ['age', 3, 1, 100],
+                            ['sex', 2, 0, 1],
+                            ['region', 7, 0, 6],
+                            ['income_class', 4, 0, 199],
+                            ['dependents_number', 5, 0, 4],
+                            ['marital_status', 2, 0, 1]])
+        
+        for i in range(1, len(test_cases)):
+            attributes = {}
+            test_number += 1
+            
+            for j in range(8):
+                attributes[test_cases[0][j]] = int(test_cases[i][j])
+                
+            original_result1, original_result2 = creditApproval(**attributes)
+            if self.error.currentIndex() == 0:
+                mutated_result1, mutated_result2 = mutatedCreditApproval1(**attributes)
+            elif self.error.currentIndex() == 1:
+                mutated_result1, mutated_result2 = mutatedCreditApproval2(**attributes)
+            elif self.error.currentIndex() == 2:
+                mutated_result1, mutated_result2 = mutatedCreditApproval3(**attributes)
+            elif self.error.currentIndex() == 3:
+                mutated_result1, mutated_result2 = mutatedCreditApproval4(**attributes)
+            elif self.error.currentIndex() == 4:
+                mutated_result1, mutated_result2 = mutatedCreditApproval5(**attributes)
+            elif self.error.currentIndex() == 5:
+                mutated_result1, mutated_result2 = mutatedCreditApproval6(**attributes)
+            elif self.error.currentIndex() == 6:
+                mutated_result1, mutated_result2 = mutatedCreditApproval7(**attributes)
+            elif self.error.currentIndex() == 7:
+                mutated_result1, mutated_result2 = mutatedCreditApproval8(**attributes)
+            elif self.error.currentIndex() == 8:
+                mutated_result1, mutated_result2 = mutatedCreditApproval9(**attributes)
+            else:
+                mutated_result1, mutated_result2 = mutatedCreditApproval10(**attributes)
+                
+            if original_result2 != mutated_result2:
+                cases_found_error += f"Кейс №{i} обнаружил ошибку\n"
+                error_found += 1
+        # print(f"{test_number} tests, {error_found} errors, error rate: {error_found/test_number}")
+        self.result_test.setText(cases_found_error)
+        self.test_number.setText(str(test_number))
+        self.test_error_found.setText(str(error_found))
+        self.test_error_rate.setText(f'{error_found/test_number*100}%')
+ 
+    def aboutDialog(self):
+        dlg = QMessageBox(self)
+        dlg.setWindowTitle("О программе")
+        dlg.setText("Эта программа предназначена для отбора и генерации тестовых кейсов с применением нейронной сети\nРазработчик: Индюков Е.П.")
+        button = dlg.exec()
+
+        if button == QMessageBox.Ok:
+            print("OK!")
+ 
+    def update(self):
+        self.label.adjustSize()  
+        
+def application():
+    app = QtWidgets.QApplication(sys.argv)
+    ui = Ui_MainWindow()
+    sys.exit(app.exec_())
 
 
 def xor():
@@ -404,20 +722,18 @@ def clothesPredict(i):
     plt.show()
 
 
-def creditApproval(citizenship, state, age, sex, region, income_class, dependents_number, marital_status):
+def creditApproval(citizenship = 0, state = 0, age = 20, sex = 0, region = 3, income_class = 2, dependents_number = 1, marital_status = 0):
     credit_limit = 0
     credit_approved = 0
 
     if region == 5 or region == 6:
         credit_limit = 0
     else:
-        # if age < 18:
-        if age < 1:
+        if age < 18:
             credit_limit = 0
         else:
             if citizenship == 0:
-                # credit_limit = 5000 + 1000 * income_class
-                credit_limit = 5000 + 1000 + income_class
+                credit_limit = 5000 + 15 * income_class
 
                 if state == 0:
                     if region == 3 or region == 4:
@@ -440,8 +756,493 @@ def creditApproval(citizenship, state, age, sex, region, income_class, dependent
                 else:
                     credit_limit += 1000
             else:
-                # credit_limit = 1000 + 800 * income_class
-                credit_limit = 1000 + 800 + income_class
+                credit_limit = 1000 + 12 * income_class
+                if marital_status == 0:
+                    if dependents_number > 2:
+                        credit_limit += 100 * dependents_number
+                    else:
+                        credit_limit += 100
+                else:
+                    credit_limit += 300
+
+                if sex == 0:
+                    credit_limit += 100
+                else:
+                    credit_limit += 200
+    if credit_limit == 0:
+        credit_approved = 1
+    else:
+        credit_approved = 0
+
+    return credit_approved, credit_limit
+
+def mutatedCreditApproval1(citizenship = 0, state = 0, age = 20, sex = 0, region = 3, income_class = 2, dependents_number = 1, marital_status = 0):
+    credit_limit = 0
+    credit_approved = 0
+
+    if region == 5: ##################
+        credit_limit = 0
+    else:
+        if age < 18:
+            credit_limit = 0
+        else:
+            if citizenship == 0:
+                credit_limit = 5000 + 15 * income_class
+
+                if state == 0:
+                    if region == 3 or region == 4:
+                        credit_limit *= 2
+                    else:
+                        credit_limit *= 1.5
+                else:
+                    credit_limit *= 1.1
+
+                if marital_status == 0:
+                    if dependents_number > 0:
+                        credit_limit += 200 * dependents_number
+                    else:
+                        credit_limit += 500
+                else:
+                    credit_limit += 1000
+
+                if sex == 0:
+                    credit_limit += 500
+                else:
+                    credit_limit += 1000
+            else:
+                credit_limit = 1000 + 12 * income_class
+                if marital_status == 0:
+                    if dependents_number > 2:
+                        credit_limit += 100 * dependents_number
+                    else:
+                        credit_limit += 100
+                else:
+                    credit_limit += 300
+
+                if sex == 0:
+                    credit_limit += 100
+                else:
+                    credit_limit += 200
+    if credit_limit == 0:
+        credit_approved = 1
+    else:
+        credit_approved = 0
+
+    return credit_approved, credit_limit
+
+def mutatedCreditApproval2(citizenship = 0, state = 0, age = 20, sex = 0, region = 3, income_class = 2, dependents_number = 1, marital_status = 0):
+    credit_limit = 0
+    credit_approved = 0
+
+    if region == 4 or region == 5: ###############################
+        credit_limit = 0
+    else:
+        if age < 18:
+            credit_limit = 0
+        else:
+            if citizenship == 0:
+                credit_limit = 5000 + 15 * income_class
+
+                if state == 0:
+                    if region == 3 or region == 4:
+                        credit_limit *= 2
+                    else:
+                        credit_limit *= 1.5
+                else:
+                    credit_limit *= 1.1
+
+                if marital_status == 0:
+                    if dependents_number > 0:
+                        credit_limit += 200 * dependents_number
+                    else:
+                        credit_limit += 500
+                else:
+                    credit_limit += 1000
+
+                if sex == 0:
+                    credit_limit += 500
+                else:
+                    credit_limit += 1000
+            else:
+                credit_limit = 1000 + 12 * income_class
+                if marital_status == 0:
+                    if dependents_number > 2:
+                        credit_limit += 100 * dependents_number
+                    else:
+                        credit_limit += 100
+                else:
+                    credit_limit += 300
+
+                if sex == 0:
+                    credit_limit += 100
+                else:
+                    credit_limit += 200
+    if credit_limit == 0:
+        credit_approved = 1
+    else:
+        credit_approved = 0
+
+    return credit_approved, credit_limit
+
+def mutatedCreditApproval3(citizenship = 0, state = 0, age = 20, sex = 0, region = 3, income_class = 2, dependents_number = 1, marital_status = 0):
+    credit_limit = 0
+    credit_approved = 0
+
+    if region == 5 or region == 6:
+        credit_limit = 0
+    else:
+        if age > 18: #############################
+            credit_limit = 0
+        else:
+            if citizenship == 0:
+                credit_limit = 5000 + 15 * income_class
+
+                if state == 0:
+                    if region == 3 or region == 4:
+                        credit_limit *= 2
+                    else:
+                        credit_limit *= 1.5
+                else:
+                    credit_limit *= 1.1
+
+                if marital_status == 0:
+                    if dependents_number > 0:
+                        credit_limit += 200 * dependents_number
+                    else:
+                        credit_limit += 500
+                else:
+                    credit_limit += 1000
+
+                if sex == 0:
+                    credit_limit += 500
+                else:
+                    credit_limit += 1000
+            else:
+                credit_limit = 1000 + 12 * income_class
+                if marital_status == 0:
+                    if dependents_number > 2:
+                        credit_limit += 100 * dependents_number
+                    else:
+                        credit_limit += 100
+                else:
+                    credit_limit += 300
+
+                if sex == 0:
+                    credit_limit += 100
+                else:
+                    credit_limit += 200
+    if credit_limit == 0:
+        credit_approved = 1
+    else:
+        credit_approved = 0
+
+    return credit_approved, credit_limit
+
+def mutatedCreditApproval4(citizenship = 0, state = 0, age = 20, sex = 0, region = 3, income_class = 2, dependents_number = 1, marital_status = 0):
+    credit_limit = 0
+    credit_approved = 0
+
+    if region == 5 or region == 6:
+        credit_limit = 0
+    else:
+        if age < 25: ##############################################
+            credit_limit = 0
+        else:
+            if citizenship == 0:
+                credit_limit = 5000 + 15 * income_class
+
+                if state == 0:
+                    if region == 3 or region == 4:
+                        credit_limit *= 2
+                    else:
+                        credit_limit *= 1.5
+                else:
+                    credit_limit *= 1.1
+
+                if marital_status == 0:
+                    if dependents_number > 0:
+                        credit_limit += 200 * dependents_number
+                    else:
+                        credit_limit += 500
+                else:
+                    credit_limit += 1000
+
+                if sex == 0:
+                    credit_limit += 500
+                else:
+                    credit_limit += 1000
+            else:
+                credit_limit = 1000 + 12 * income_class
+                if marital_status == 0:
+                    if dependents_number > 2:
+                        credit_limit += 100 * dependents_number
+                    else:
+                        credit_limit += 100
+                else:
+                    credit_limit += 300
+
+                if sex == 0:
+                    credit_limit += 100
+                else:
+                    credit_limit += 200
+    if credit_limit == 0:
+        credit_approved = 1
+    else:
+        credit_approved = 0
+
+    return credit_approved, credit_limit
+
+def mutatedCreditApproval5(citizenship = 0, state = 0, age = 20, sex = 0, region = 3, income_class = 2, dependents_number = 1, marital_status = 0):
+    credit_limit = 0
+    credit_approved = 0
+
+    if region == 5 or region == 6:
+        credit_limit = 0
+    else:
+        if age < 18:
+            credit_limit = 0
+        else:
+            if citizenship == 1: ################################
+                credit_limit = 5000 + 15 * income_class
+
+                if state == 0:
+                    if region == 3 or region == 4:
+                        credit_limit *= 2
+                    else:
+                        credit_limit *= 1.5
+                else:
+                    credit_limit *= 1.1
+
+                if marital_status == 0:
+                    if dependents_number > 0:
+                        credit_limit += 200 * dependents_number
+                    else:
+                        credit_limit += 500
+                else:
+                    credit_limit += 1000
+
+                if sex == 0:
+                    credit_limit += 500
+                else:
+                    credit_limit += 1000
+            else:
+                credit_limit = 1000 + 12 * income_class
+                if marital_status == 0:
+                    if dependents_number > 2:
+                        credit_limit += 100 * dependents_number
+                    else:
+                        credit_limit += 100
+                else:
+                    credit_limit += 300
+
+                if sex == 0:
+                    credit_limit += 100
+                else:
+                    credit_limit += 200
+    if credit_limit == 0:
+        credit_approved = 1
+    else:
+        credit_approved = 0
+
+    return credit_approved, credit_limit
+
+def mutatedCreditApproval6(citizenship = 0, state = 0, age = 20, sex = 0, region = 3, income_class = 2, dependents_number = 1, marital_status = 0):
+    credit_limit = 0
+    credit_approved = 0
+
+    if region == 5 or region == 6:
+        credit_limit = 0
+    else:
+        if age < 18:
+            credit_limit = 0
+        else:
+            if citizenship == 0:
+                credit_limit = 5000 + 15 * income_class
+
+                if state == 1: ##################################
+                    if region == 3 or region == 4:
+                        credit_limit *= 2
+                    else:
+                        credit_limit *= 1.5
+                else:
+                    credit_limit *= 1.1
+
+                if marital_status == 0:
+                    if dependents_number > 0:
+                        credit_limit += 200 * dependents_number
+                    else:
+                        credit_limit += 500
+                else:
+                    credit_limit += 1000
+
+                if sex == 0:
+                    credit_limit += 500
+                else:
+                    credit_limit += 1000
+            else:
+                credit_limit = 1000 + 12 * income_class
+                if marital_status == 0:
+                    if dependents_number > 2:
+                        credit_limit += 100 * dependents_number
+                    else:
+                        credit_limit += 100
+                else:
+                    credit_limit += 300
+
+                if sex == 0:
+                    credit_limit += 100
+                else:
+                    credit_limit += 200
+    if credit_limit == 0:
+        credit_approved = 1
+    else:
+        credit_approved = 0
+
+    return credit_approved, credit_limit
+
+def mutatedCreditApproval7(citizenship = 0, state = 0, age = 20, sex = 0, region = 3, income_class = 2, dependents_number = 1, marital_status = 0):
+    credit_limit = 0
+    credit_approved = 0
+
+    if region == 5 or region == 6:
+        credit_limit = 0
+    else:
+        if age < 18:
+            credit_limit = 0
+        else:
+            if citizenship == 0:
+                credit_limit = 5000 + 15 * income_class
+
+                if state == 0:
+                    if region == 3: ##############################
+                        credit_limit *= 2
+                    else:
+                        credit_limit *= 1.5
+                else:
+                    credit_limit *= 1.1
+
+                if marital_status == 0:
+                    if dependents_number > 0:
+                        credit_limit += 200 * dependents_number
+                    else:
+                        credit_limit += 500
+                else:
+                    credit_limit += 1000
+
+                if sex == 0:
+                    credit_limit += 500
+                else:
+                    credit_limit += 1000
+            else:
+                credit_limit = 1000 + 12 * income_class
+                if marital_status == 0:
+                    if dependents_number > 2:
+                        credit_limit += 100 * dependents_number
+                    else:
+                        credit_limit += 100
+                else:
+                    credit_limit += 300
+
+                if sex == 0:
+                    credit_limit += 100
+                else:
+                    credit_limit += 200
+    if credit_limit == 0:
+        credit_approved = 1
+    else:
+        credit_approved = 0
+
+    return credit_approved, credit_limit
+
+def mutatedCreditApproval8(citizenship = 0, state = 0, age = 20, sex = 0, region = 3, income_class = 2, dependents_number = 1, marital_status = 0):
+    credit_limit = 0
+    credit_approved = 0
+
+    if region == 5 or region == 6:
+        credit_limit = 0
+    else:
+        if age < 18:
+            credit_limit = 0
+        else:
+            if citizenship == 0:
+                credit_limit = 5000 + 15 * income_class
+
+                if state == 0:
+                    if region == 1 or region == 2: #############################
+                        credit_limit *= 2
+                    else:
+                        credit_limit *= 1.5
+                else:
+                    credit_limit *= 1.1
+
+                if marital_status == 0:
+                    if dependents_number > 0:
+                        credit_limit += 200 * dependents_number
+                    else:
+                        credit_limit += 500
+                else:
+                    credit_limit += 1000
+
+                if sex == 0:
+                    credit_limit += 500
+                else:
+                    credit_limit += 1000
+            else:
+                credit_limit = 1000 + 12 * income_class
+                if marital_status == 0:
+                    if dependents_number > 2:
+                        credit_limit += 100 * dependents_number
+                    else:
+                        credit_limit += 100
+                else:
+                    credit_limit += 300
+
+                if sex == 0:
+                    credit_limit += 100
+                else:
+                    credit_limit += 200
+    if credit_limit == 0:
+        credit_approved = 1
+    else:
+        credit_approved = 0
+
+    return credit_approved, credit_limit
+
+def mutatedCreditApproval9(citizenship = 0, state = 0, age = 20, sex = 0, region = 3, income_class = 2, dependents_number = 1, marital_status = 0):
+    credit_limit = 0
+    credit_approved = 0
+
+    if region == 5 or region == 6:
+        credit_limit = 0
+    else:
+        if age < 18:
+            credit_limit = 0
+        else:
+            if citizenship == 0:
+                credit_limit = 5000 + 15 * income_class
+
+                if state == 0:
+                    if region == 3 or region == 4:
+                        credit_limit *= 2
+                    else:
+                        credit_limit *= 1.5
+                else:
+                    credit_limit *= 1.1
+
+                if marital_status == 0:
+                    if dependents_number > 0:
+                        credit_limit += 200 * dependents_number
+                    else:
+                        credit_limit += 500
+                else:
+                    credit_limit += 1000
+
+                if sex == 0:
+                    credit_limit += 5000 ##############################
+                else:
+                    credit_limit += 1000
+            else:
+                credit_limit = 1000 + 12 * income_class
                 if marital_status == 0:
                     if dependents_number > 2:
                         credit_limit += 100 * dependents_number
@@ -462,7 +1263,7 @@ def creditApproval(citizenship, state, age, sex, region, income_class, dependent
     return credit_approved, credit_limit
 
 
-def mutatedCreditApproval(citizenship, state, age, sex, region, income_class, dependents_number, marital_status):
+def mutatedCreditApproval10(citizenship, state, age, sex, region, income_class, dependents_number, marital_status):
     credit_limit = 0
     credit_approved = 0
 
@@ -473,7 +1274,7 @@ def mutatedCreditApproval(citizenship, state, age, sex, region, income_class, de
             credit_limit = 0
         else:
             if citizenship == 0:
-                credit_limit = 5000 + 1000 * income_class
+                credit_limit = 5000 + 15 * income_class
 
                 if state == 0:
                     if region == 3 or region == 4:
@@ -496,7 +1297,7 @@ def mutatedCreditApproval(citizenship, state, age, sex, region, income_class, de
                 else:
                     credit_limit += 1000
             else:
-                credit_limit = 1000 + 800 * income_class
+                credit_limit = 1000 + 2 * income_class #######################
                 if marital_status == 0:
                     if dependents_number > 2:
                         credit_limit += 100 * dependents_number
@@ -531,7 +1332,7 @@ def buildCreditNN(output_class_number):
     train_output = []
     test_input = []
     test_output = []
-    epochs_number = 500
+    epochs_number = 1000
     train_number = 1000
     test_number = 1000
     
@@ -541,7 +1342,7 @@ def buildCreditNN(output_class_number):
         age = randint(1, 100)
         sex = randint(0, 1)
         region = randint(0, 6)
-        income_class = randint(0, 3)
+        income_class = randint(0, 199)
         dependents_number = randint(0, 4)
         marital_status = randint(0, 1)
 
@@ -549,9 +1350,9 @@ def buildCreditNN(output_class_number):
                                                        dependents_number, marital_status)
         age = normalize(age, 1, 100)
         region = normalize(region, 0, 6)
-        income_class = normalize(income_class, 0, 3)
+        income_class = normalize(income_class, 0, 199)
         dependents_number = normalize(dependents_number, 0, 4)
-        credit_limit = normalize(credit_limit, 0, 18000)
+        credit_limit = normalize(credit_limit, 0, 20000)
         if credit_limit != 0:
             credit_limit = int(credit_limit // 0.1) + 1
 
@@ -584,6 +1385,7 @@ def buildCreditNN(output_class_number):
 
 
 def predictCreditNN():
+    # randomly generate input values, normalize them and predict output
     test_input = []
     test_output = []
 
@@ -593,7 +1395,7 @@ def predictCreditNN():
         age = randint(1, 100)
         sex = randint(0, 1)
         region = randint(0, 6)
-        income_class = randint(0, 3)
+        income_class = randint(0, 199)
         dependents_number = randint(0, 4)
         marital_status = randint(0, 1)
 
@@ -601,9 +1403,9 @@ def predictCreditNN():
                                                        dependents_number, marital_status)
         age = normalize(age, 1, 100)
         region = normalize(region, 0, 6)
-        income_class = normalize(income_class, 0, 3)
+        income_class = normalize(income_class, 0, 199)
         dependents_number = normalize(dependents_number, 0, 4)
-        credit_limit = normalize(credit_limit, 0, 18000)
+        credit_limit = normalize(credit_limit, 0, 20000)
         if credit_limit != 0:
             credit_limit = int(credit_limit // 0.1) + 1
 
@@ -621,6 +1423,7 @@ def predictCreditNN():
 
 
 def inputPredictCreditNN():
+    # input attributes, normalize them and predict output with NN
     citizenship = int(input('citizenship'))
     state = int(input('state'))
     age = int(input('age'))
@@ -640,7 +1443,7 @@ def inputPredictCreditNN():
 
     age = normalize(age, 1, 100)
     region = normalize(region, 0, 6)
-    income_class = normalize(income_class, 0, 3)
+    income_class = normalize(income_class, 0, 199)
     dependents_number = normalize(dependents_number, 0, 4)
     test_input = [citizenship, state, age, sex, region, income_class,
                   dependents_number, marital_status]
@@ -654,7 +1457,8 @@ def inputPredictCreditNN():
     print('prediction: ', np.argmax(predictions[0]), predictions[0])
 
 
-def testCredit():
+def testPredictCredit():
+    # predicts program output and compares with actual one
     test_input = []
     test_number = 100
 
@@ -664,13 +1468,13 @@ def testCredit():
         age = randint(1, 100)
         sex = randint(0, 1)
         region = 2
-        income_class = randint(0, 3)
+        income_class = randint(0, 199)
         dependents_number = randint(0, 4)
         marital_status = randint(0, 1)
 
         age = normalize(age, 1, 100)
         region = normalize(region, 0, 6)
-        income_class = normalize(income_class, 0, 3)
+        income_class = normalize(income_class, 0, 199)
         dependents_number = normalize(dependents_number, 0, 4)
 
         test_input.append([citizenship, state, age, sex, region, income_class, dependents_number, marital_status])
@@ -687,18 +1491,18 @@ def testCredit():
         age = denormalize(test_input[i][2],1,100)
         sex = test_input[i][3]
         region = denormalize(test_input[i][4],0,6)
-        income_class = denormalize(test_input[i][5],0,3)
+        income_class = denormalize(test_input[i][5],0,199)
         dependents_number = denormalize(test_input[i][6],0,4)
         marital_status = test_input[i][7]
         credit_approved, credit_limit = creditApproval(citizenship, state, age, sex, region, income_class,
                                                        dependents_number, marital_status)
-        credit_limit = normalize(credit_limit, 0, 18000)
+        credit_limit = normalize(credit_limit, 0, 20000)
         if credit_limit != 0:
             credit_limit = int(credit_limit // 0.1) + 1
 
-        credit_approved2, credit_limit2 = mutatedCreditApproval(citizenship, state, age, sex, region, income_class,
+        credit_approved2, credit_limit2 = mutatedCreditApproval1(citizenship, state, age, sex, region, income_class,
                                                                 dependents_number, marital_status)
-        credit_limit2 = normalize(credit_limit2, 0, 18000)
+        credit_limit2 = normalize(credit_limit2, 0, 20000)
         if credit_limit2 != 0:
             credit_limit2 = int(credit_limit2 // 0.1) + 1
 
@@ -717,7 +1521,45 @@ def testCredit():
                 pass
 
 
+def saveTestCases():
+    with open('readme.txt', 'w') as f:
+        f.write('Create a new text file!11111111')
+
+
+def testCredit():
+    # compares mutated and original version with given test cases
+    test_cases = np.loadtxt('test suite.txt', dtype=np.dtype('U20'))
+    
+    error_found = 0
+    test_number = 0
+
+    attribute_limits = np.array([['citizenship', 2, 0, 1],
+                        ['state', 2, 0, 1],
+                        ['age', 3, 1, 100],
+                        ['sex', 2, 0, 1],
+                        ['region', 7, 0, 6],
+                        ['income_class', 4, 0, 199],
+                        ['dependents_number', 5, 0, 4],
+                        ['marital_status', 2, 0, 1]])
+    
+    for i in range(1, len(test_cases)):
+        attributes = {}
+        test_number += 1
+        
+        for j in range(8):
+            attributes[test_cases[0][j]] = int(test_cases[i][j])
+            
+        original_result1, original_result2 = creditApproval(**attributes)
+        mutated_result1, mutated_result2 = mutatedCreditApproval1(**attributes)
+
+        if original_result2 != mutated_result2:
+            print(f"error found: {i}")
+            error_found += 1
+    print(f"{test_number} tests, {error_found} errors, error rate: {error_found/test_number}")
+
+
 def rankAttrCredit():
+    # rank NN input attributes based on weight values
     new_model = tf.keras.models.load_model('saved_model/credit_model.h5')
     new_model.summary()
     # get weights
@@ -744,10 +1586,98 @@ def rankAttrCredit():
             input_rank.append(weight_rank[0][0])
         weight_rank.pop(0)
     attributes = ['citizenship', 'state', 'age', 'sex', 'region', 'income_class', 'dependents_number', 'marital_status']
-    for i in input_rank:
-        print(attributes[i])
-    pass
+    for i in range(len(input_rank)):
+        # print(attributes[i])
+        input_rank[i]=attributes[input_rank[i]]
+    return input_rank
+
+
+def generateTestCases(rank_list):
+    # generate test cases based on ranked list of input attributes
+    
+    test_cases = []
+    # [name, number of possible values, lower limit, upper limit]
+    attribute_limits = np.array([['citizenship', 2, 0, 1],
+                        ['state', 2, 0, 1],
+                        ['age', 3, 1, 100],
+                        ['sex', 2, 0, 1],
+                        ['region', 4, 0, 6],
+                        ['income_class', 3, 0, 199],
+                        ['dependents_number', 5, 0, 4],
+                        ['marital_status', 2, 0, 1]])
+    test_number = 1
+    
+    # delete 3 least important attributes
+    for i in range(len(rank_list)):
+        if i < 3:
+            x, = np.argwhere(attribute_limits == rank_list[i])
+            attribute_limits = np.delete(attribute_limits,x[0],0)
+
+    # attribute names in first row of suite
+    test_cases.append([attribute_limits[0][0], attribute_limits[1][0],
+                      attribute_limits[2][0],attribute_limits[3][0],
+                      attribute_limits[4][0]])
+    
+    # count number of test cases based on attributes' number of possible values
+    for i in range(len(attribute_limits)):
+        test_number *= int(attribute_limits[i][1])
+    
+    # generate test cases
+    
+    for i in range(test_number):
+        test_case = []
+        for j in attribute_limits:
+            attr = randint(int(j[2]), int(j[3]))
+            test_case.append(attr)
+        test_cases.append(test_case)  
         
+    # test_number = 165 
+    # for i in range(test_number):
+    #     test_case = []
+    #     for j in range(len(attribute_limits)):
+    #         repeat = 1
+    #         rotate = 1
+    #         for k in range(j):
+    #             repeat *= int(attribute_limits[k][1])
+    #         for k in range(j+1):
+    #             rotate *= int(attribute_limits[k][1])
+    #         attr = round(((int(attribute_limits[j][3]) - int(attribute_limits[j][2])) / int(attribute_limits[j][1])) * (((i % rotate))//repeat) + 0.0000005) + int(attribute_limits[j][2])
+    #         if i == (144 / 2) + 1:
+    #             pass
+    #         test_case.append(attr)
+    #     test_cases.append(test_case)  
+    
+    attribute_limits = np.array([['citizenship', 2, 0, 1],
+                        ['state', 2, 0, 1],
+                        ['age', 3, 1, 100],
+                        ['sex', 2, 0, 1],
+                        ['region', 4, 0, 6],
+                        ['income_class', 3, 0, 199],
+                        ['dependents_number', 5, 0, 4],
+                        ['marital_status', 2, 0, 1]])
+    
+    # insert back deleted attributes with value '1'        
+    z = np.ones((len(test_cases), 3), dtype=np.dtype('U20'))
+    expanded_test_cases = np.append(test_cases, z, axis=1)
+
+    for i in range(5):
+        x, = np.argwhere(attribute_limits == test_cases[0][i])
+        attribute_limits = np.delete(attribute_limits,x[0],0)
+
+    expanded_test_cases[0][5] = str(attribute_limits[0][0])
+    expanded_test_cases[0][6] = str(attribute_limits[1][0])
+    expanded_test_cases[0][7] = str(attribute_limits[2][0])
+    
+    np.savetxt('test suite.txt', expanded_test_cases, fmt='%s')
+
+
+def callfunc():
+    filename = 'credit'
+    funcname = 'creditApproval'
+    # funcname = 'mutatedCreditApproval1'
+    attributes = {'age': 18, 'region': 6}
+    exec(f"from {filename} import {funcname}\nprint({funcname}(**attributes))")
+
 
 
 def main():
@@ -761,13 +1691,21 @@ def main():
     #     clothesPredict(i)
     #     i += 1
     
-    buildCreditNN(10)
+    # buildCreditNN(10)
     # predictCreditNN()
     # inputPredictCreditNN()
     # with cProfile.Profile() as pr:
-        # testCredit()
+        # testPredictCredit()
+    # generateTestCases(rankAttrCredit())
     # testCredit()
-    rankAttrCredit()
+    
+    application()
+    
+    # callfunc()
+    
+    # saveTestCases()
+    # print(rankAttrCredit())
+    # print(generateTestCases(rankAttrCredit()))
     
     # stats = pstats.Stats(pr)
     # stats.sort_stats(pstats.SortKey.TIME)
@@ -778,4 +1716,3 @@ if __name__ == '__main__':
     # This code won't run if this file is imported.
     main()
     
-

@@ -593,3 +593,11 @@ def mutatedCreditApproval10(citizenship, state, age, sex, region, income_class, 
         credit_approved = 0
 
     return credit_approved, credit_limit
+
+
+def testProgram(x, y, z, mode=0):
+    a = 0
+    a = 2*z + 1.5*y + 5*x
+    a *= (mode/10)
+    
+    return a

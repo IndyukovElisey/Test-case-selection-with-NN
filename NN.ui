@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>989</width>
-    <height>688</height>
+    <width>1039</width>
+    <height>670</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -36,6 +36,27 @@
      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0">
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_9">
+        <item>
+         <widget class="QToolButton" name="btn_page_setup">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Конфигурация 
+тестируемой 
+программы</string>
+          </property>
+          <property name="autoRaise">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
         <item>
          <widget class="QToolButton" name="btn_page1">
           <property name="sizePolicy">
@@ -113,12 +134,252 @@
       <item>
        <widget class="QStackedWidget" name="verticalStackedWidget">
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
-        <widget class="QWidget" name="page_1" native="true">
+        <widget class="QWidget" name="page_setup">
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="label_11">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Введите данные о тестируемой программе</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,1">
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_7">
+              <item>
+               <widget class="QLabel" name="label_7">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Имя файла:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_4">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Имя функции:</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_8">
+              <item>
+               <widget class="QLineEdit" name="text_filename">
+                <property name="text">
+                 <string>credit</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="text_funcname">
+                <property name="text">
+                 <string>creditApproval</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btn_save_program">
+            <property name="text">
+             <string>Загрузить список атрибутов</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="label_34">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Настройка атрибутов</string>
+            </property>
+           </widget>
+          </item>
+          <item alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="label_18">
+            <property name="text">
+             <string>Входные атрибуты</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_14">
+            <item>
+             <widget class="QTableWidget" name="attribute_table">
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <column>
+               <property name="text">
+                <string>Имя</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Нижний порог</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Верхний порог</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+            <item alignment="Qt::AlignHCenter">
+             <widget class="QLabel" name="label_17">
+              <property name="text">
+               <string>Выходной атрибут</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
+              <item>
+               <spacer name="horizontalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_5">
+                <property name="text">
+                 <string>Нижний порог:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="output_lower_limit">
+                <property name="text">
+                 <string>0</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="Line" name="line_6">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_16">
+                <property name="text">
+                 <string>Верхний порог:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="output_upper_limit">
+                <property name="text">
+                 <string>20000</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btn_save_attributes">
+            <property name="text">
+             <string>Сохранить параметры атрибутов</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="page_1">
          <layout class="QVBoxLayout" name="verticalLayout">
           <item alignment="Qt::AlignHCenter">
            <widget class="QLabel" name="label_9">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
             <property name="text">
              <string>Введите параметры нейронной сети</string>
             </property>
@@ -164,6 +425,18 @@
                 </property>
                </widget>
               </item>
+              <item>
+               <widget class="QLabel" name="label_13">
+                <property name="font">
+                 <font>
+                  <pointsize>14</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Имя модели НС:</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </item>
             <item>
@@ -191,10 +464,17 @@
               <item>
                <widget class="QSpinBox" name="range">
                 <property name="maximum">
-                 <number>100</number>
+                 <number>99999</number>
                 </property>
                 <property name="value">
                  <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="NN_name1">
+                <property name="text">
+                 <string>credit_model1</string>
                 </property>
                </widget>
               </item>
@@ -238,6 +518,24 @@
         <widget class="QWidget" name="page_2">
          <layout class="QVBoxLayout" name="verticalLayout_10">
           <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,1">
+            <item>
+             <widget class="QLabel" name="label_19">
+              <property name="text">
+               <string>Имя модели НС:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="NN_name2">
+              <property name="text">
+               <string>credit_model1</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
            <widget class="QPushButton" name="btn_sort">
             <property name="text">
              <string>Ранжировать атрибуты</string>
@@ -259,7 +557,30 @@
            </widget>
           </item>
           <item>
-           <widget class="QTextBrowser" name="result_sort"/>
+           <widget class="QLabel" name="label_12">
+            <property name="font">
+             <font>
+              <italic>false</italic>
+             </font>
+            </property>
+            <property name="text">
+             <string>Список атрибутов, сортированный по порядку убывания важности:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QTableWidget" name="ranked_table">
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <column>
+             <property name="text">
+              <string>Атрибут</string>
+             </property>
+            </column>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -267,167 +588,53 @@
          <layout class="QVBoxLayout" name="verticalLayout_11">
           <item alignment="Qt::AlignHCenter">
            <widget class="QLabel" name="label_14">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <italic>false</italic>
+              <bold>true</bold>
+             </font>
+            </property>
             <property name="text">
              <string>Введите количество диапазонов ранжированных входных атрибутов</string>
             </property>
            </widget>
           </item>
           <item>
-           <layout class="QFormLayout" name="formLayout">
-            <property name="sizeConstraint">
-             <enum>QLayout::SetDefaultConstraint</enum>
+           <widget class="QLabel" name="label_3">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
-            <property name="labelAlignment">
-             <set>Qt::AlignHCenter|Qt::AlignTop</set>
+            <property name="text">
+             <string>Список количества диапазонов соответствует списку ранжированных атрибутов в порядке убывания важности</string>
             </property>
-            <property name="formAlignment">
-             <set>Qt::AlignHCenter|Qt::AlignTop</set>
+            <property name="textFormat">
+             <enum>Qt::AutoText</enum>
             </property>
-            <property name="horizontalSpacing">
-             <number>20</number>
+            <property name="scaledContents">
+             <bool>false</bool>
             </property>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_16">
-              <property name="text">
-               <string>Ранг атрибута</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLabel" name="label_17">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Количество диапазонов</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_18">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>1</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QSpinBox" name="range1">
-              <property name="value">
-               <number>4</number>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="label_19">
-              <property name="text">
-               <string>2</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QSpinBox" name="range2">
-              <property name="value">
-               <number>3</number>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="0">
-             <widget class="QLabel" name="label_20">
-              <property name="text">
-               <string>3</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1">
-             <widget class="QSpinBox" name="range3">
-              <property name="value">
-               <number>3</number>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="0">
-             <widget class="QLabel" name="label_21">
-              <property name="text">
-               <string>4</string>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="1">
-             <widget class="QSpinBox" name="range4">
-              <property name="value">
-               <number>2</number>
-              </property>
-             </widget>
-            </item>
-            <item row="5" column="0">
-             <widget class="QLabel" name="label_22">
-              <property name="text">
-               <string>5</string>
-              </property>
-             </widget>
-            </item>
-            <item row="5" column="1">
-             <widget class="QSpinBox" name="range5">
-              <property name="value">
-               <number>2</number>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="0">
-             <widget class="QLabel" name="label_23">
-              <property name="text">
-               <string>6</string>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="1">
-             <widget class="QSpinBox" name="range6">
-              <property name="value">
-               <number>1</number>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="0">
-             <widget class="QLabel" name="label_24">
-              <property name="text">
-               <string>7</string>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="1">
-             <widget class="QSpinBox" name="range7">
-              <property name="value">
-               <number>1</number>
-              </property>
-             </widget>
-            </item>
-            <item row="8" column="0">
-             <widget class="QLabel" name="label_25">
-              <property name="text">
-               <string>8</string>
-              </property>
-             </widget>
-            </item>
-            <item row="8" column="1">
-             <widget class="QSpinBox" name="range8">
-              <property name="value">
-               <number>1</number>
-              </property>
-             </widget>
-            </item>
-           </layout>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QTableWidget" name="range_table">
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <column>
+             <property name="text">
+              <string>Количество диапазонов</string>
+             </property>
+            </column>
+           </widget>
           </item>
           <item>
            <widget class="QPushButton" name="btn_generate">
@@ -451,7 +658,23 @@
            </widget>
           </item>
           <item>
-           <widget class="QTextBrowser" name="result_generate"/>
+           <widget class="QTableWidget" name="cases_table">
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <column>
+             <property name="text">
+              <string>Атрибут 1</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Атрибут 2</string>
+             </property>
+            </column>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -462,7 +685,7 @@
             <item>
              <widget class="QLabel" name="label_15">
               <property name="text">
-               <string>Выберите внедряемую ошибку</string>
+               <string>Внедряемая ошибка:</string>
               </property>
              </widget>
             </item>
@@ -538,7 +761,7 @@
           <item alignment="Qt::AlignHCenter">
            <widget class="QLabel" name="label_33">
             <property name="text">
-             <string>Кейсы, обнаружившие ошибку</string>
+             <string>Кейсы, обнаружившие ошибку:</string>
             </property>
            </widget>
           </item>
@@ -612,8 +835,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>989</width>
-     <height>30</height>
+     <width>1039</width>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="settings">
@@ -633,7 +856,6 @@
    <addaction name="settings"/>
    <addaction name="about"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="action1">
    <property name="text">
     <string>О программе</string>
